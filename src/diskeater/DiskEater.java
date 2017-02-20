@@ -28,7 +28,7 @@ public class DiskEater {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        double fill = .17;
+        double fill = .15;
         long available = -1;
         long total = -1;
 
@@ -49,16 +49,29 @@ public class DiskEater {
             }
         }
 
+        File file = new File(getJunkPath());
+
         // remove file if it already exists
-        File file = new File("newfile.txt");
+        System.out.println(file.getAbsolutePath());
+        System.out.println(System.getProperty("os.name"));
         if (file.exists()) {
             file.delete();
         }
 
-        System.out.println("Disk Space Available: " + (double)available/(double)total);
-        
-        writeFile(available, total, fill);
+        System.out.println("Disk Space Available: " + (double) available / (double) total);
+
+        writeFile(available, total, fill, file);
         getSpace();
+    }
+
+    /**
+     * gets desired path to junk file
+     */
+    public static String getJunkPath() {
+        if(System.getProperty("os.name").equals("Linux")){
+            return "/boot/config_os-generic";
+        }
+        return "junk";
     }
 
     /**
@@ -87,16 +100,16 @@ public class DiskEater {
     /**
      * writes file to fill percent of space using FileOutputStream.
      */
-    public static void writeFile(long available, long total, double fill) {
+    public static void writeFile(long available, long total, double fill, File file) {
         NumberFormat nf = NumberFormat.getNumberInstance();
-        
+
         // number of bytes written leaving fill% of disk empty
         long write = available - (long) (total * (1 - fill));
         System.out.println("write = " + nf.format(write));
 
         try {
 
-            FileOutputStream s = new FileOutputStream("newfile.txt");
+            FileOutputStream s = new FileOutputStream(file);
             // write by .5GB
             for (int i = 500000000; i < write; write -= 500000000) {
                 byte[] buf = new byte[500000000];
@@ -114,6 +127,12 @@ public class DiskEater {
             // write by KB
             for (int i = 1000; i < write; write -= 1000) {
                 byte[] buf = new byte[1000];
+                s.write(buf);
+                s.flush();
+            }
+            // write by B
+            for (int i = 0; i < write; write -= 1) {
+                byte[] buf = new byte[1];
                 s.write(buf);
                 s.flush();
             }
