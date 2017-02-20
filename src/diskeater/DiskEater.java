@@ -6,12 +6,17 @@
 package diskeater;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -23,9 +28,18 @@ public class DiskEater {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        int space = getSpace();
-//        System.out.println(space);
-        writeFile();
+        double fill = .010;
+
+        // remove file if it already exists
+        File file = new File("newfile.txt");
+        if (file.exists()) {
+            file.delete();
+        }
+
+        long space = getSpace();
+        System.out.println(space);
+        writeFile(space, fill);
+        getSpace();
     }
 
     /**
@@ -33,17 +47,17 @@ public class DiskEater {
      *
      * @return disk space in MB
      */
-    public static int getSpace() {
+    public static long getSpace() {
         NumberFormat nf = NumberFormat.getNumberInstance();
         for (Path root : FileSystems.getDefault().getRootDirectories()) {
 
             System.out.print(root + ": ");
             try {
                 FileStore store = Files.getFileStore(root);
-                System.out.println("available=" + nf.format(store.getUsableSpace())
+                System.out.println("available=" 
+                        + nf.format(store.getUsableSpace())
                         + ", total=" + nf.format(store.getTotalSpace()));
-                System.out.println("available = " + (store.getUsableSpace()) / 1000000);
-                return (int) (store.getUsableSpace() / 1000000);
+                return (store.getUsableSpace());
             } catch (IOException e) {
                 System.out.println("error querying space: " + e.toString());
             }
@@ -52,21 +66,63 @@ public class DiskEater {
     }
 
     /**
-     * writes file to fill percent of space.
+     * writes file to fill percent of space using FileOutputStream.
      */
-    public static void writeFile() {
+    public static void writeFile(long size, double fill) {
+        NumberFormat nf = NumberFormat.getNumberInstance();
+        long write = (long) (size * fill);
+        System.out.println("write = " + nf.format(write));
+        
         try {
-//            Path root = (Path) FileSystems.getDefault().getRootDirectories();
-            File file = new File("newfile.txt");
 
-            if (file.createNewFile()) {
-                System.out.println("File is created!");
-            } else {
-                System.out.println("File already exists.");
+            FileOutputStream s = new FileOutputStream("newfile.txt");
+            // write by .5GB
+            for (int i = 500000000; i < write; write -= 500000000) {
+                byte[] buf = new byte[500000000];
+                System.out.println("created byte array");
+                s.write(buf);
+                System.out.println("wrote to file");
+                s.flush();
+            }
+            // write by MB
+            for (int i = 1000000; i < write; write -= 1000000) {
+                byte[] buf = new byte[1000000];
+                s.write(buf);
+                s.flush();
+            }
+            // write by KB
+            for (int i = 1000; i < write; write -= 1000) {
+                byte[] buf = new byte[1000];
+                s.write(buf);
+                s.flush();
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * writes file to fill percent of space using RandomAccessFile.
+     */
+    public static void fastWriteFile(long size, double fill) {
+        NumberFormat nf = NumberFormat.getNumberInstance();
+        long write = (long) (size * fill);
+        System.out.println("write = " + nf.format(write));
+//        File file = new File("newfile.txt");
+        RandomAccessFile f;
+        try {
+            f = new RandomAccessFile("newfile.txt", "rws");
+            f.setLength(write);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE, 
+                    null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE, 
+                    null, ex);
+        }
+    }
+    
+    
+    
 }
