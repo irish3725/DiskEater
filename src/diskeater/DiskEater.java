@@ -28,7 +28,26 @@ public class DiskEater {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        double fill = .010;
+        double fill = .17;
+        long available = -1;
+        long total = -1;
+
+        //get storage information
+        NumberFormat nf = NumberFormat.getNumberInstance();
+        for (Path root : FileSystems.getDefault().getRootDirectories()) {
+
+            System.out.print(root + ": ");
+            try {
+                FileStore store = Files.getFileStore(root);
+                System.out.println("available="
+                        + nf.format(store.getUsableSpace())
+                        + ", total=" + nf.format(store.getTotalSpace()));
+                available = store.getUsableSpace();
+                total = store.getTotalSpace();
+            } catch (IOException e) {
+                System.out.println("error querying space: " + e.toString());
+            }
+        }
 
         // remove file if it already exists
         File file = new File("newfile.txt");
@@ -36,9 +55,9 @@ public class DiskEater {
             file.delete();
         }
 
-        long space = getSpace();
-        System.out.println(space);
-        writeFile(space, fill);
+        System.out.println("Disk Space Available: " + (double)available/(double)total);
+        
+        writeFile(available, total, fill);
         getSpace();
     }
 
@@ -54,7 +73,7 @@ public class DiskEater {
             System.out.print(root + ": ");
             try {
                 FileStore store = Files.getFileStore(root);
-                System.out.println("available=" 
+                System.out.println("available="
                         + nf.format(store.getUsableSpace())
                         + ", total=" + nf.format(store.getTotalSpace()));
                 return (store.getUsableSpace());
@@ -68,11 +87,13 @@ public class DiskEater {
     /**
      * writes file to fill percent of space using FileOutputStream.
      */
-    public static void writeFile(long size, double fill) {
+    public static void writeFile(long available, long total, double fill) {
         NumberFormat nf = NumberFormat.getNumberInstance();
-        long write = (long) (size * fill);
-        System.out.println("write = " + nf.format(write));
         
+        // number of bytes written leaving fill% of disk empty
+        long write = available - (long) (total * (1 - fill));
+        System.out.println("write = " + nf.format(write));
+
         try {
 
             FileOutputStream s = new FileOutputStream("newfile.txt");
@@ -101,7 +122,7 @@ public class DiskEater {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * writes file to fill percent of space using RandomAccessFile.
      */
@@ -115,14 +136,12 @@ public class DiskEater {
             f = new RandomAccessFile("newfile.txt", "rws");
             f.setLength(write);
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE, 
+            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE,
                     null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE, 
+            Logger.getLogger(DiskEater.class.getName()).log(Level.SEVERE,
                     null, ex);
         }
     }
-    
-    
-    
+
 }
